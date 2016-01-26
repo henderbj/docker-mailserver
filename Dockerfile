@@ -4,11 +4,16 @@ MAINTAINER Thomas VIAL
 # Packages
 RUN apt-get update -q --fix-missing
 RUN apt-get -y upgrade
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install vim postfix sasl2-bin courier-imap courier-imap-ssl courier-authdaemon supervisor gamin amavisd-new spamassassin clamav clamav-daemon libnet-dns-perl libmail-spf-perl pyzor razor arj bzip2 cabextract cpio file gzip nomarch p7zip pax unzip zip zoo rsyslog mailutils netcat
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install vim postfix sasl2-bin \
+    courier-imap courier-imap-ssl courier-authdaemon supervisor gamin amavisd-new \
+    spamassassin clamav clamav-daemon libnet-dns-perl libmail-spf-perl pyzor razor \
+    arj bzip2 cabextract cpio file gzip nomarch p7zip pax unzip zip zoo rsyslog \
+    mailutils netcat
 RUN apt-get autoclean && rm -rf /var/lib/apt/lists/*
 
 # Configures Saslauthd
-RUN rm -rf /var/run/saslauthd && ln -s /var/spool/postfix/var/run/saslauthd /var/run/saslauthd
+RUN rm -rf /var/run/saslauthd && \
+    ln -s /var/spool/postfix/var/run/saslauthd /var/run/saslauthd
 RUN adduser postfix sasl
 RUN echo 'NAME="saslauthd"\nSTART=yes\nMECHANISMS="sasldb"\nTHREADS=0\nPWDIR=/var/spool/postfix/var/run/saslauthd\nPIDFILE="${PWDIR}/saslauthd.pid"\nOPTIONS="-n 0 -c -m /var/spool/postfix/var/run/saslauthd"' > /etc/default/saslauthd
 
@@ -23,7 +28,9 @@ RUN sed -i -r 's/^(CRON|ENABLED)=0/\1=1/g' /etc/default/spamassassin
 RUN sed -i -r 's/#(@|   \\%)bypass/\1bypass/g' /etc/amavis/conf.d/15-content_filter_mode
 RUN adduser clamav amavis
 RUN adduser amavis clamav
-RUN useradd -u 5000 -d /home/docker -s /bin/bash -p $(echo docker | openssl passwd -1 -stdin) docker
+
+# DOCKERPASS must be set in .env file
+RUN useradd -u 5000 -d /home/docker -s /bin/bash -p $(echo $DOCKERPASS | openssl passwd -1 -stdin) docker
 
 # Enables Clamav
 RUN chmod 644 /etc/clamav/freshclam.conf
