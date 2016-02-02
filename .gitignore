@@ -3,5 +3,5 @@ docker-compose.yml
 postfix/ssl/*
 letsencrypt/
 assert.sh*
-accounts.cf
+postfix/accounts.cf
 *.env
