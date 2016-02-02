@@ -58,7 +58,10 @@ touch /etc/postfix/virtual && postmap /etc/postfix/virtual
 
 # DKIM
 grep -vE '^(\s*$|#)' /etc/postfix/vhost | while read domainname; do
-  mkdir -p /etc/opendkim/keys/$domainname
+  if [ ! -d /etc/opendkim/keys/$domainname ]; then 
+    echo Creating dir: /etc/opendkim/keys/$domainname; 
+    mkdir -p /etc/opendkim/keys/$domainname
+  fi
   if [ ! -f "/etc/opendkim/keys/$domainname/mail.private" ]; then
     echo "Creating DKIM private key /etc/opendkim/keys/$domainname/mail.private"
     pushd /etc/opendkim/keys/$domainname
