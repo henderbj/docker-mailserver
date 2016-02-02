@@ -5,3 +5,4 @@ letsencrypt/
 assert.sh*
 postfix/accounts.cf
 *.env
+.idea
