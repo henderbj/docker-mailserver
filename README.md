@@ -15,6 +15,7 @@ Includes:
 - clamav with automatic updates
 - opendkim
 - opendmarc 
+- fail2ban
 - [LetsEncrypt](https://letsencrypt.org/) and self-signed certificates
 - optional pop3 server
 - [integration tests](https://travis-ci.org/tomav/docker-mailserver) 
@@ -88,15 +89,22 @@ Example:
   * *empty* (default) => POP3 service disabled
   * 1 => Enables POP3 service
 
+Please read [how the container starts](https://github.com/tomav/docker-mailserver/blob/master/start-mailserver.sh) to understand what's expected.  
+
 ## SSL
 
-Please read [SSL.md](SSL.md) for more information.
+Please read [the SSL page in the wiki](https://github.com/tomav/docker-mailserver/wiki/SSL) for more information.
 
 ## Todo
 
 Things to do or to improve are stored on [Github](https://github.com/tomav/docker-mailserver/issues), some open by myself.
 Feel free to improve this docker image.
 
-## Wanna help?
+## Contribute
 
-Fork, improve, add tests and PR. ;-)
+- Fork
+- Improve
+- Add integration tests in `test/test.sh`
+- Build image and run tests using `make`  
+- Document your improvements
+- Commit, push and make a pull-request

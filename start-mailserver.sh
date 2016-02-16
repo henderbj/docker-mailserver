@@ -27,6 +27,12 @@ if [ -f /tmp/postfix/accounts.cf ]; then
     mkdir -p /var/mail/${domain}
     if [ ! -d "/var/mail/${domain}/${user}" ]; then
       maildirmake "/var/mail/${domain}/${user}"
+      maildirmake "/var/mail/${domain}/${user}/.Sent"
+      maildirmake "/var/mail/${domain}/${user}/.Trash"
+      maildirmake "/var/mail/${domain}/${user}/.Drafts"
+      echo -e "INBOX\nINBOX.Sent\nINBOX.Trash\nInbox.Drafts" >> "/var/mail/${domain}/${user}/courierimapsubscribed"
+      touch "/var/mail/${domain}/${user}/.Sent/maildirfolder"
+
     fi
     echo ${domain} >> /tmp/vhost.tmp
   done < /tmp/postfix/accounts.cf
@@ -113,8 +119,6 @@ if [ ! -f "/etc/opendmarc/ignore.hosts" ]; then
   echo "localhost" >> /etc/opendmarc/ignore.hosts
 fi
 
-
-
 # SSL Configuration
 case $DMS_SSL in
   "letsencrypt" )
@@ -125,7 +129,7 @@ case $DMS_SSL in
       sed -i -r 's/smtpd_tls_key_file=\/etc\/ssl\/private\/ssl-cert-snakeoil.key/smtpd_tls_key_file=\/etc\/letsencrypt\/live\/'$(hostname)'\/privkey.pem/g' /etc/postfix/main.cf
 
       # Courier configuration
-      cat "/etc/letsencrypt/live/$(hostname)/privkey.pem" "/etc/letsencrypt/live/$(hostname)/cert.pem" > "/etc/letsencrypt/live/$(hostname)/combined.pem"
+      cat "/etc/letsencrypt/live/$(hostname)/cert.pem" "/etc/letsencrypt/live/$(hostname)/chain.pem" "/etc/letsencrypt/live/$(hostname)/privkey.pem" > "/etc/letsencrypt/live/$(hostname)/combined.pem"
       sed -i -r 's/TLS_CERTFILE=\/etc\/courier\/imapd.pem/TLS_CERTFILE=\/etc\/letsencrypt\/live\/'$(hostname)'\/combined.pem/g' /etc/courier/imapd-ssl
 
       # POP3 courier configuration
@@ -187,6 +191,22 @@ echo "required_score 5" >> /etc/mail/spamassassin/local.cf
 echo "rewrite_header Subject ***SPAM***" >> /etc/mail/spamassassin/local.cf
 cp /tmp/spamassassin/rules.cf /etc/spamassassin/
 
+
+echo "Configuring fail2ban"
+# enable filters
+perl -i -0pe 's/(\[postfix\]\n\n).*\n/\1enabled  = true\n/'     /etc/fail2ban/jail.conf
+perl -i -0pe 's/(\[couriersmtp\]\n\n).*\n/\1enabled  = true\n/' /etc/fail2ban/jail.conf
+perl -i -0pe 's/(\[courierauth\]\n\n).*\n/\1enabled  = true\n/' /etc/fail2ban/jail.conf
+perl -i -0pe 's/(\[sasl\]\n\n).*\n/\1enabled  = true\n/'        /etc/fail2ban/jail.conf
+
+# increase ban time and find time to 3h
+sed -i "/^bantime *=/c\bantime = 10800"     /etc/fail2ban/jail.conf
+sed -i "/^findtime *=/c\findtime = 10800"   /etc/fail2ban/jail.conf
+
+# avoid warning on startup
+echo "ignoreregex =" >> /etc/fail2ban/filter.d/postfix-sasl.conf
+
+
 echo "Starting daemons"
 cron
 /etc/init.d/rsyslog start
@@ -207,6 +227,7 @@ fi
 /etc/init.d/opendkim start
 /etc/init.d/opendmarc start
 /etc/init.d/postfix start
+/etc/init.d/fail2ban start
 
 echo "Listing SASL users"
 sasldblistusers2
