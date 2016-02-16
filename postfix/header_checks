@@ -1,0 +1,4 @@
+/^Received:.*Authenticated sender:/              IGNORE
+/^X-Originating-IP:/    IGNORE
+/^X-Mailer:/            IGNORE
+/^Mime-Version:/        IGNORE

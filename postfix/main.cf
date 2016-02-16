@@ -63,3 +63,7 @@ milter_protocol = 2
 milter_default_action = accept
 smtpd_milters = inet:localhost:12301,inet:localhost:54321
 non_smtpd_milters = inet:localhost:12301,inet:localhost:54321
+
+# Remove some headers
+mime_header_checks = regexp:/etc/postfix/header_checks
+header_checks = regexp:/etc/postfix/header_checks

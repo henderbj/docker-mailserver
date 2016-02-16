@@ -54,6 +54,10 @@ ADD postfix/sasl/smtpd.conf /etc/postfix/sasl/smtpd.conf
 ADD bin/generate-ssl-certificate /usr/local/bin/generate-ssl-certificate
 RUN chmod +x /usr/local/bin/generate-ssl-certificate
 
+# Enable header_checks
+ADD postfix/header_checks /etc/postfix/header_checks
+RUN postmap /etc/postfix/header_checks
+
 # Get LetsEncrypt signed certificate
 RUN curl https://letsencrypt.org/certs/lets-encrypt-x1-cross-signed.pem > /etc/ssl/certs/lets-encrypt-x1-cross-signed.pem
 RUN curl https://letsencrypt.org/certs/lets-encrypt-x2-cross-signed.pem > /etc/ssl/certs/lets-encrypt-x2-cross-signed.pem
