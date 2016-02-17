@@ -222,7 +222,12 @@ if [ "$ENABLE_POP3" = 1 ]; then
 fi
 
 /etc/init.d/spamassassin start
-/etc/init.d/clamav-daemon start
+
+# Disable clamav till have more memory
+sed -e '/@bypass_virus_checks_maps = (/ s/^#*/#/' -i /etc/amavis/conf.d/15-content_filter_mode
+sed -e '/.*\\%bypass_virus_checks, \\@bypass_virus_checks_acl, \\\$bypass_virus_checks_re);/ s/^#*/#/' -i /etc/amavis/conf.d/15-content_filter_mode
+#/etc/init.d/clamav-daemon start
+
 /etc/init.d/amavis start
 /etc/init.d/opendkim start
 /etc/init.d/opendmarc start
