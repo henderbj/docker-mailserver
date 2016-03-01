@@ -1,19 +1,36 @@
 NAME = tvial/docker-mailserver
-VERSION = $(TRAVIS_BUILD_ID)
 
 all: build run fixtures tests clean
 all-no-build: run fixtures tests clean
 
 build:
-	docker build --no-cache -t $(NAME):$(VERSION) . 
+	docker build --no-cache -t $(NAME) . 
 
 run:
 	# Copy test files
 	cp test/accounts.cf postfix/
 	cp test/virtual postfix/
 	# Run containers
-	docker run -d --name mail -v "`pwd`/postfix":/tmp/postfix -v "`pwd`/spamassassin":/tmp/spamassassin -v "`pwd`/test":/tmp/test -h mail.my-domain.com -t $(NAME):$(VERSION)
-	docker run -d --name mail_pop3 -v "`pwd`/postfix":/tmp/postfix -v "`pwd`/spamassassin":/tmp/spamassassin -v "`pwd`/test":/tmp/test -e ENABLE_POP3=1 -h mail.my-domain.com -t $(NAME):$(VERSION)
+	docker run -d --name mail \
+		-v "`pwd`/postfix":/tmp/postfix \
+		-v "`pwd`/spamassassin":/tmp/spamassassin \
+		-v "`pwd`/test":/tmp/test \
+		-e SA_TAG=1.0 \
+		-e SA_TAG2=2.0 \
+		-e SA_KILL=3.0 \
+		-h mail.my-domain.com -t $(NAME)
+	docker run -d --name mail_pop3 \
+		-v "`pwd`/postfix":/tmp/postfix \
+		-v "`pwd`/spamassassin":/tmp/spamassassin \
+		-v "`pwd`/test":/tmp/test \
+		-e ENABLE_POP3=1 \
+		-h mail.my-domain.com -t $(NAME)
+	docker run -d --name mail_smtponly \
+		-v "`pwd`/postfix":/tmp/postfix \
+		-v "`pwd`/spamassassin":/tmp/spamassassin \
+		-v "`pwd`/test":/tmp/test \
+		-e SMTP_ONLY=1 \
+		-h mail.my-domain.com -t $(NAME)
 	# Wait for containers to fully start
 	sleep 60
 
@@ -30,10 +47,10 @@ fixtures:
 
 tests:
 	# Start tests
-	/bin/bash ./test/test.sh
+	./test/bats/bats test/tests.bats
 
 clean:
 	# Get default files back
 	git checkout postfix/accounts.cf postfix/virtual
 	# Remove running test containers
-	docker rm -f mail mail_pop3
+	docker rm -f mail mail_pop3 mail_smtponly

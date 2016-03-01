@@ -134,12 +134,35 @@ case $DMS_SSL in
 
       # POP3 courier configuration
       sed -i -r 's/POP3_TLS_REQUIRED=0/POP3_TLS_REQUIRED=1/g' /etc/courier/pop3d-ssl
-      sed -i -r 's/TLS_CERTFILE=\/etc\/courier\/pop3d.pem/TLS_CERTFILE=\/etc\/letsencrypt\/live\/'$(hostname)'-combined.pem/g' /etc/courier/pop3d-ssl
+      sed -i -r 's/TLS_CERTFILE=\/etc\/courier\/pop3d.pem/TLS_CERTFILE=\/etc\/letsencrypt\/live\/'$(hostname)'\/combined.pem/g' /etc/courier/pop3d-ssl
       # needed to support gmail
-      sed -i -r 's/TLS_TRUSTCERTS=\/etc\/ssl\/certs/TLS_TRUSTCERTS=\/etc\/letsencrypt\/live\/'$(hostname)'-fullchain.pem/g' /etc/courier/pop3d-ssl
+      sed -i -r 's/TLS_TRUSTCERTS=\/etc\/ssl\/certs/TLS_TRUSTCERTS=\/etc\/letsencrypt\/live\/'$(hostname)'\/fullchain.pem/g' /etc/courier/pop3d-ssl
 
       echo "SSL configured with letsencrypt certificates"
 
+    ;;
+
+  "custom" )
+    # Adding CA signed SSL certificate if provided in 'postfix/ssl' folder
+    if [ -e "/tmp/postfix/ssl/$(hostname)-full.pem" ]; then
+      echo "Adding $(hostname) SSL certificate"
+      mkdir -p /etc/postfix/ssl
+      cp "/tmp/postfix/ssl/$(hostname)-full.pem" /etc/postfix/ssl
+
+      # Postfix configuration
+      sed -i -r 's/smtpd_tls_cert_file=\/etc\/ssl\/certs\/ssl-cert-snakeoil.pem/smtpd_tls_cert_file=\/etc\/postfix\/ssl\/'$(hostname)'-full.pem/g' /etc/postfix/main.cf
+      sed -i -r 's/smtpd_tls_key_file=\/etc\/ssl\/private\/ssl-cert-snakeoil.key/smtpd_tls_key_file=\/etc\/postfix\/ssl\/'$(hostname)'-full.pem/g' /etc/postfix/main.cf
+
+      # Courier configuration
+      sed -i -r 's/TLS_CERTFILE=\/etc\/courier\/imapd.pem/TLS_CERTFILE=\/etc\/postfix\/ssl\/'$(hostname)'-full.pem/g' /etc/courier/imapd-ssl
+
+      # POP3 courier configuration
+      sed -i -r 's/POP3_TLS_REQUIRED=0/POP3_TLS_REQUIRED=1/g' /etc/courier/pop3d-ssl
+      sed -i -r 's/TLS_CERTFILE=\/etc\/courier\/pop3d.pem/TLS_CERTFILE=\/etc\/postfix\/ssl\/'$(hostname)'-full.pem/g' /etc/courier/pop3d-ssl
+
+      echo "SSL configured with CA signed/custom certificates"
+      
+    fi
     ;;
 
   "self-signed" )
@@ -185,12 +208,10 @@ echo "Creating /etc/mailname"
 echo $(hostname -d) > /etc/mailname
 
 echo "Configuring Spamassassin"
-echo "required_hits 5.0" >> /etc/mail/spamassassin/local.cf
-echo "report_safe 0" >> /etc/mail/spamassassin/local.cf
-echo "required_score 5" >> /etc/mail/spamassassin/local.cf
-echo "rewrite_header Subject ***SPAM***" >> /etc/mail/spamassassin/local.cf
+SA_TAG=${SA_TAG:="2.0"} && sed -i -r 's/^\$sa_tag_level_deflt (.*);/\$sa_tag_level_deflt = '$SA_TAG';/g' /etc/amavis/conf.d/20-debian_defaults
+SA_TAG2=${SA_TAG2:="6.31"} && sed -i -r 's/^\$sa_tag2_level_deflt (.*);/\$sa_tag2_level_deflt = '$SA_TAG2';/g' /etc/amavis/conf.d/20-debian_defaults
+SA_KILL=${SA_KILL:="6.31"} && sed -i -r 's/^\$sa_kill_level_deflt (.*);/\$sa_kill_level_deflt = '$SA_KILL';/g' /etc/amavis/conf.d/20-debian_defaults
 cp /tmp/spamassassin/rules.cf /etc/spamassassin/
-
 
 echo "Configuring fail2ban"
 # enable filters
@@ -211,11 +232,15 @@ echo "Starting daemons"
 cron
 /etc/init.d/rsyslog start
 /etc/init.d/saslauthd start
+
+if [ "$SMTP_ONLY" != 1 ]; then
+
 /etc/init.d/courier-authdaemon start
 /etc/init.d/courier-imap start
 /etc/init.d/courier-imap-ssl start
 
-if [ "$ENABLE_POP3" = 1 ]; then
+fi
+if [ "$ENABLE_POP3" = 1 -a "$SMTP_ONLY" != 1 ]; then
   echo "Starting POP3 services"
   /etc/init.d/courier-pop start
   /etc/init.d/courier-pop-ssl start

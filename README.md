@@ -88,6 +88,15 @@ Example:
 * ENABLE_POP3
   * *empty* (default) => POP3 service disabled
   * 1 => Enables POP3 service
+* SMTP_ONLY
+  * *empty* (default) => courier daemons might start
+  * *1 => do not launch any courier daemons (imap, pop3)
+* SA_TAG
+  * *2.0* (default) => add spam info headers if at, or above that level
+* SA_TAG2
+  * *6.31* (default) => add 'spam detected' headers at that level
+* SA_KILL
+  * *6.31* (default) => triggers spam evasive actions)
 
 Please read [how the container starts](https://github.com/tomav/docker-mailserver/blob/master/start-mailserver.sh) to understand what's expected.  
 
@@ -104,7 +113,7 @@ Feel free to improve this docker image.
 
 - Fork
 - Improve
-- Add integration tests in `test/test.sh`
+- Add integration tests in `test/tests.bats`
 - Build image and run tests using `make`  
 - Document your improvements
 - Commit, push and make a pull-request
