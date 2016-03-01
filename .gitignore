@@ -4,5 +4,6 @@ postfix/ssl/*
 letsencrypt/
 assert.sh*
 postfix/accounts.cf
+postfix/virtual
 *.env
 .idea
