@@ -1,15 +1,24 @@
-mail:
-  image: tvial/docker-mailserver
-  hostname: mail
-  domainname: domain.com
-  cap_add:
-  - NET_ADMIN
-  ports:
-  - "25:25"
-  - "143:143"
-  - "587:587"
-  - "993:993"
+vols:
+  image: busybox
+  stdin_open: true
   volumes:
-  - ./spamassassin:/tmp/spamassassin/
-  - ./postfix:/tmp/postfix/
-  environment:
+    - "./spamassassin/:/tmp/spamassassin/"
+    - "./postfix/:/tmp/postfix/"
+    - "./postfix/ssl/:/ssl/"
+    - "./data/:/var/mail/"
+    - "./opendkim.keys:/etc/opendkim/keys/"
+
+mail:
+  build: .
+  hostname: mail
+  domainname: mydomain.com
+  env_file: .env
+  cap_add:
+    - NET_BIND_SERVICE
+  ports:
+    - "25:25"
+    - "143:143"
+    - "587:587"
+    - "993:993"
+  volumes_from:
+      - "vols"
