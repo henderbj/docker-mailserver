@@ -1,0 +1,27 @@
+#! /bin/bash
+
+DATABASE=${DATABASE:-/tmp/docker-mailserver/postfix-virtual.cf}
+
+EMAIL="$1"
+RECIPIENT="$2"
+
+usage() {
+	echo "Usage: delalias <alias@domain> <recipient@other>"
+}
+
+errex() {
+	echo "$@" 1>&2
+	exit 1
+}
+
+escape() {
+	echo "${1//./\\.}"
+}
+
+[ -z "$EMAIL" ] || [ -z "$RECIPIENT" ]  && { usage; errex "No email specifed"; }
+[ -s "$DATABASE" ] || exit 0
+
+#CNT=$(grep "^$EMAIL" $DATABASE | wc -w | awk '{print $1}')
+sed -i -e "/^$EMAIL *$RECIPIENT$/d" \
+       -e "/^$EMAIL/s/,$RECIPIENT//g" \
+       -e "/^$EMAIL/s/$RECIPIENT,//g" $DATABASE
